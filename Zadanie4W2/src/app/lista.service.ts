@@ -1,64 +1,51 @@
 import { Injectable } from '@angular/core';
 import { Usluga } from '../models/usluga';
-import { Observable, of } from 'rxjs';
+import { Observable, catchError, of, throwError } from 'rxjs';
 import { UslugaBody } from '../models/usluga-body';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ListaService {
-  private static idGen = 1;
+  private apiUrl = 'http://localhost:5009/api/uslugi'; 
 
-  private lista: Usluga[] = [
-  { id: ListaService.idGen++, nazwa: "Malowanie ścian", wykonawca: "Jan Kowalski", rodzaj: "Budowlana", rok: 2023 },
-  { id: ListaService.idGen++, nazwa: "Naprawa laptopa", wykonawca: "TechFix Serwis", rodzaj: "Elektroniczna", rok: 2024 },
-  { id: ListaService.idGen++, nazwa: "Projekt ogrodu", wykonawca: "Zielony Zakątek", rodzaj: "Projektowa", rok: 2022 },
-  { id: ListaService.idGen++, nazwa: "Tłumaczenie dokumentów", wykonawca: "Anna Nowak", rodzaj: "Językowa", rok: 2021 },
-  { id: ListaService.idGen++, nazwa: "Kurs programowania", wykonawca: "CodeAcademy", rodzaj: "Edukacyjna", rok: 2025 }
-];
+  constructor(private http: HttpClient) {}
 
-  get(): Observable<Usluga[]> {
-    return of(this.lista);
+  get(searchTerm: string = ''): Observable<Usluga[]> {
+    return this.http.get<Usluga[]>(`${this.apiUrl}?search=${searchTerm}`)
+      .pipe(catchError(this.handleError));
   }
 
   getByID(id: number): Observable<Usluga> {
-    const ksiazka = this.lista.find(k => k.id === id);
-    if(ksiazka == null) {
-      throw new Error('Nie znaleziono wskazanej książki');
-    }
-    return of(ksiazka);
+    return this.http.get<Usluga>(`${this.apiUrl}/${id}`);
+  }
+
+  post(body: UslugaBody): Observable<Usluga> {
+    return this.http.post<Usluga>(this.apiUrl, body)
+      .pipe(catchError(this.handleError));
+  }
+  
+  put(id: number, body: UslugaBody): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}`, body)
+      .pipe(catchError(this.handleError));
   }
 
   delete(id: number): Observable<void> {
-    this.lista = this.lista.filter(k => k.id !== id);
-    return of(undefined);
+    return this.http.delete<void>(`${this.apiUrl}/${id}`)
+      .pipe(catchError(this.handleError));
   }
 
-  put(id: number, body: UslugaBody): Observable<void> {
-    const ksiazka = this.lista.find(k => k.id === id);
-    if(ksiazka == null) {
-      throw new Error('Nie znaleziono wskazanej książki');
+  private handleError(error: HttpErrorResponse) {
+    let errorMessage = 'Wystąpił błąd!';
+    
+    if (error.status === 400 || error.status === 500) {
+      errorMessage = error.error.errors ? Object.values(error.error.errors).join(', ') : error.error.message;
     }
 
-    ksiazka.wykonawca = body.wykonawca;
-    ksiazka.rodzaj = body.rodzaj;
-    ksiazka.rok = body.rok;
-    ksiazka.nazwa = body.nazwa;
-
-    return of(undefined);
+    console.error('Błąd API:', errorMessage);
+    return throwError(() => new Error(errorMessage));
   }
 
-  post(body: UslugaBody): Observable<void> {
-    const ksiazka: Usluga = {
-      id: ListaService.idGen++,
-      wykonawca: body.wykonawca,
-      rodzaj: body.rodzaj,
-      rok: body.rok,
-      nazwa: body.nazwa
-    };
-
-    this.lista.push(ksiazka);
-
-    return of(undefined);
-  }
+  
 }

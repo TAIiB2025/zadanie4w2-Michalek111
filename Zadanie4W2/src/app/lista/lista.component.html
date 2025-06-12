@@ -1,7 +1,12 @@
+
 <div>
     <a routerLink="form">Dodaj</a>
 </div>
-<hr />
+
+<p *ngIf="errorMessage" style="color: red;">{{ errorMessage }}</p>
+
+<input type="text" [(ngModel)]="searchTerm" (input)="fetchData()" placeholder="Szukaj usług..." />
+
 <table border="1">
     <thead>
         <tr>
@@ -15,12 +20,14 @@
     </thead>
     <tbody>
         <tr *ngFor="let obiekt of (dane$ | async)">
-            <td>{{obiekt.id}}</td>
-            <td>{{obiekt.nazwa}}</td>
-            <td>{{obiekt.wykonawca}}</td>
-            <td>{{obiekt.rodzaj}}</td>
-            <td>{{obiekt.rok}}</td>
+            <td>{{ obiekt.id }}</td>
+            <td>{{ obiekt.nazwa }}</td>
+            <td>{{ obiekt.wykonawca }}</td>
+            <td>{{ obiekt.rodzaj }}</td>
+            <td>{{ obiekt.rok }}</td>
             <td><a [routerLink]="obiekt.id + ''">Link</a></td>
         </tr>
     </tbody>
 </table>
+
+
